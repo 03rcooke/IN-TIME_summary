@@ -14,7 +14,8 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 # load and tidy database
 # HERE LOAD DATA
 
-realms <- sf::read_sf("data/olson/realms.shp")
+# biogeographic realms for Olson
+realms <- sf::read_sf("data/realms.shp")
 
 #### Data summary ####
 
@@ -29,25 +30,6 @@ length(unique(dat_n$sample_id))
 # number of sources
 length(unique(dat_n$source_title))
 # 149
-
-# sites
-sites <- dplyr::distinct(dat_n, location_latitude, location_longitude, .keep_all = TRUE)
-
-# number of sites
-nrow(sites)
-# 11944
-
-# number of sites per study
-sites_source <- sites %>% 
-  dplyr::group_by(source_title) %>%
-  dplyr::summarise(count = n())
-
-# median sites per study
-median(sites_source$count)
-# minimum sites per study
-min(sites_source$count)
-# maximum sites per study
-max(sites_source$count)
 
 # assemblage time series (unique combinations of source_title, location_latitude, location_longitude, and sample_technique)
 ts <- dat_n %>% 
@@ -156,11 +138,6 @@ length(unique(dat_n$taxon_order))
 length(unique(dat_n$taxon_family))
 # 566
 
-# number of countries
-length(unique(dat_n$country))
-# 42
-# lots of territories rather than official countries, isle of man, puerto rico, greenland, palestine, hong kong, jersey, guernsey; 48097 NAs [sum(is.na(dat_n$country))]
-
 # years
 d_year <- dat_n %>% 
   dplyr::mutate(date_start_year = as.numeric(format(date_start, "%Y")),
@@ -249,14 +226,12 @@ max(us$unique_tax)
 sum_stats <- data.frame(name = c("records",
                                  "samples",
                                  "sources",
-                                 "sites",
                                  "time series",
                                  "time series x date combinations",
                                  "orders",
                                  "families",
                                  "species-level records",
                                  "unique species",
-                                 "countries",
                                  "min year",
                                  "max year",
                                  "minimum number of sites per study",
@@ -273,14 +248,12 @@ sum_stats <- data.frame(name = c("records",
                         value = c(length(unique(dat_n$occurrence_id)),
                                   length(unique(dat_n$sample_id)),
                                   length(unique(dat_n$source_title)),
-                                  nrow(sites),
                                   length(unique(ts$ts_id)),
                                   nrow(dplyr::distinct(ts, ts_id, date_start)),
                                   length(unique(dat_n$taxon_order)),
                                   length(unique(dat_n$taxon_family)),
                                   nrow(dis_spp_r),
                                   nrow(dis_spp),
-                                  length(unique(dat_n$country)),
                                   min(d_year$date_start_year),
                                   max(d_year$date_end_year),
                                   min(sites_source$count),
@@ -297,108 +270,89 @@ sum_stats <- data.frame(name = c("records",
                         notes = c("unique occurrence_id; after excluding duplicates, bad plot ids, and records with zeros [I also removed a record that had an abundance of -2]",
                                   "unique sample_id",
                                   "unique source_id",
-                                  "unique lat long",
                                   "group by attributes that should be the same within a time series; allowed to change between samples include sample_id, dates, occurrence_id, and sampling effort",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "lots of territories rather than official countries, isle of man, puerto rico, greenland, palestine, hong kong; 47775 NAs [sum(is.na(dat_n$country))]",
-                                  "", 
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  "",
-                                  ""))
+                                  rep("", 18)))
 
-# write.csv(sum_stats, "outputs/sum_stats.csv", row.names = FALSE)
+write.csv(sum_stats, "outputs/sum_stats.csv", row.names = FALSE)
 
 ##### Realms #####
 
-# # number of records per realm
-# r_realm <- dat_n %>%
-#   dplyr::count(sample_realm, name = "records")
-# 
-# # number of studies per realm
-# stud_realm <- dat_n %>%
-#   dplyr::group_by(sample_realm) %>%
-#   dplyr::summarise(sources = dplyr::n_distinct(source_title))
-# 
-# # number of time series per realm
-# ts_realm <- ts %>%
-#   dplyr::group_by(sample_realm) %>%
-#   dplyr::summarise(ts = dplyr::n_distinct(ts_id))
-# 
-# # number of species-level records per realm
-# spr_realm <- dis_spp_r %>%
-#   dplyr::count(sample_realm, name = "spp_n")
-# 
-# # orders, families, species
-# ord_realm <- dat_n %>%
-#   dplyr::group_by(sample_realm) %>%
-#   dplyr::summarise(orders = dplyr::n_distinct(taxon_order))
-# 
-# fam_realm <- dat_n %>%
-#   dplyr::group_by(sample_realm) %>%
-#   dplyr::summarise(families = dplyr::n_distinct(taxon_family))
-# 
-# sp_realm <- dis_spp %>%
-#   dplyr::count(sample_realm, name = "spp")
-# 
-# realm_out <- dplyr::left_join(r_realm, stud_realm, by = "sample_realm") %>%
-#   dplyr::left_join(ts_realm, by = "sample_realm") %>%
-#   dplyr::left_join(spr_realm, by = "sample_realm") %>%
-#   dplyr::left_join(ord_realm, by = "sample_realm") %>%
-#   dplyr::left_join(fam_realm, by = "sample_realm") %>%
-#   dplyr::left_join(sp_realm, by = "sample_realm")
-# 
-# write.csv(realm_out, "outputs/realm_out.csv", row.names = FALSE)
+# number of records per realm
+r_realm <- dat_n %>%
+  dplyr::count(sample_realm, name = "records")
+
+# number of studies per realm
+stud_realm <- dat_n %>%
+  dplyr::group_by(sample_realm) %>%
+  dplyr::summarise(sources = dplyr::n_distinct(source_title))
+
+# number of time series per realm
+ts_realm <- ts %>%
+  dplyr::group_by(sample_realm) %>%
+  dplyr::summarise(ts = dplyr::n_distinct(ts_id))
+
+# number of species-level records per realm
+spr_realm <- dis_spp_r %>%
+  dplyr::count(sample_realm, name = "spp_n")
+
+# orders, families, species
+ord_realm <- dat_n %>%
+  dplyr::group_by(sample_realm) %>%
+  dplyr::summarise(orders = dplyr::n_distinct(taxon_order))
+
+fam_realm <- dat_n %>%
+  dplyr::group_by(sample_realm) %>%
+  dplyr::summarise(families = dplyr::n_distinct(taxon_family))
+
+sp_realm <- dis_spp %>%
+  dplyr::count(sample_realm, name = "spp")
+
+realm_out <- dplyr::left_join(r_realm, stud_realm, by = "sample_realm") %>%
+  dplyr::left_join(ts_realm, by = "sample_realm") %>%
+  dplyr::left_join(spr_realm, by = "sample_realm") %>%
+  dplyr::left_join(ord_realm, by = "sample_realm") %>%
+  dplyr::left_join(fam_realm, by = "sample_realm") %>%
+  dplyr::left_join(sp_realm, by = "sample_realm")
+
+write.csv(realm_out, "outputs/realm_out.csv", row.names = FALSE)
 
 ##### Taxonomic #####
 
 ## Order
 
-# # number of records per order
-# r_order <- dat_n %>%
-#   dplyr::count(taxon_order, name = "records")
-# 
-# # number of studies per order
-# stud_order <- dat_n %>%
-#   dplyr::group_by(taxon_order) %>%
-#   dplyr::summarise(sources = dplyr::n_distinct(source_title))
-# 
-# # number of time series per order
-# ts_order <- ts %>%
-#   dplyr::group_by(taxon_order) %>%
-#   dplyr::summarise(ts = dplyr::n_distinct(ts_id))
-# 
-# # number of species-level records per order
-# spr_order <- dis_spp_r %>%
-#   dplyr::count(taxon_order, name = "spp_n")
-# 
-# # families, species
-# fam_order <- dat_n %>%
-#   dplyr::group_by(taxon_order) %>%
-#   dplyr::summarise(families = dplyr::n_distinct(taxon_family))
-# 
-# sp_order <- dis_spp %>%
-#   dplyr::count(taxon_order, name = "spp")
-# 
-# order_out <- dplyr::left_join(r_order, stud_order, by = "taxon_order") %>%
-#   dplyr::left_join(ts_order, by = "taxon_order") %>%
-#   dplyr::left_join(spr_order, by = "taxon_order") %>%
-#   dplyr::left_join(fam_order, by = "taxon_order") %>%
-#   dplyr::left_join(sp_order, by = "taxon_order")
-# 
-# write.csv(order_out, "outputs/order_out.csv", row.names = FALSE)
+# number of records per order
+r_order <- dat_n %>%
+  dplyr::count(taxon_order, name = "records")
+
+# number of studies per order
+stud_order <- dat_n %>%
+  dplyr::group_by(taxon_order) %>%
+  dplyr::summarise(sources = dplyr::n_distinct(source_title))
+
+# number of time series per order
+ts_order <- ts %>%
+  dplyr::group_by(taxon_order) %>%
+  dplyr::summarise(ts = dplyr::n_distinct(ts_id))
+
+# number of species-level records per order
+spr_order <- dis_spp_r %>%
+  dplyr::count(taxon_order, name = "spp_n")
+
+# families, species
+fam_order <- dat_n %>%
+  dplyr::group_by(taxon_order) %>%
+  dplyr::summarise(families = dplyr::n_distinct(taxon_family))
+
+sp_order <- dis_spp %>%
+  dplyr::count(taxon_order, name = "spp")
+
+order_out <- dplyr::left_join(r_order, stud_order, by = "taxon_order") %>%
+  dplyr::left_join(ts_order, by = "taxon_order") %>%
+  dplyr::left_join(spr_order, by = "taxon_order") %>%
+  dplyr::left_join(fam_order, by = "taxon_order") %>%
+  dplyr::left_join(sp_order, by = "taxon_order")
+
+write.csv(order_out, "outputs/order_out.csv", row.names = FALSE)
 
 ## Family
 
@@ -434,104 +388,61 @@ family_out <- dplyr::left_join(r_family, stud_family, by = dplyr::join_by(taxon_
 
 write.csv(family_out, "outputs/family_out.csv", row.names = FALSE)
 
-##### Countries #####
-
-# # number of records per country
-# r_country <- dat_n %>%
-#   dplyr::count(country, name = "records")
-#
-# # number of studies per country
-# stud_country <- dat_n %>%
-#   dplyr::group_by(country) %>%
-#   dplyr::summarise(sources = dplyr::n_distinct(source_title))
-#
-# # number of time series per country
-# ts_country <- ts %>%
-#   dplyr::group_by(country) %>%
-#   dplyr::summarise(ts = dplyr::n_distinct(ts_id))
-#
-# # number of species-level records per country
-# spr_country <- dis_spp_r %>%
-#   dplyr::count(country, name = "spp_n")
-#
-# # orders, families, species
-# ord_country <- dat_n %>%
-#   dplyr::group_by(country) %>%
-#   dplyr::summarise(orders = dplyr::n_distinct(taxon_order))
-#
-# fam_country <- dat_n %>%
-#   dplyr::group_by(country) %>%
-#   dplyr::summarise(families = dplyr::n_distinct(taxon_family))
-#
-# sp_country <- dis_spp %>%
-#   dplyr::count(country, name = "spp")
-#
-# country_out <- dplyr::left_join(r_country, stud_country, by = "country") %>%
-#   dplyr::left_join(ts_country, by = "country") %>%
-#   dplyr::left_join(spr_country, by = "country") %>%
-#   dplyr::left_join(ord_country, by = "country") %>%
-#   dplyr::left_join(fam_country, by = "country") %>%
-#   dplyr::left_join(sp_country, by = "country")
-#
-# write.csv(country_out, "outputs/country_out.csv", row.names = FALSE)
-
 ##### Sample techniques #####
 
-# # number of records per technique
-# r_technique <- dat_n %>%
-#   dplyr::count(sample_technique, name = "records")
-# 
-# # number of studies per technique
-# stud_technique <- dat_n %>%
-#   dplyr::group_by(sample_technique) %>%
-#   dplyr::summarise(sources = dplyr::n_distinct(source_title))
-# 
-# # number of time series per technique
-# ts_technique <- ts %>%
-#   dplyr::group_by(sample_technique) %>%
-#   dplyr::summarise(ts = dplyr::n_distinct(ts_id))
-# 
-# # number of species-level records per technique
-# spr_technique <- dis_spp_r %>%
-#   dplyr::count(sample_technique, name = "spp_n")
-# 
-# # orders, families, species
-# ord_technique <- dat_n %>%
-#   dplyr::group_by(sample_technique) %>%
-#   dplyr::summarise(orders = dplyr::n_distinct(taxon_order))
-# 
-# fam_technique <- dat_n %>%
-#   dplyr::group_by(sample_technique) %>%
-#   dplyr::summarise(families = dplyr::n_distinct(taxon_family))
-# 
-# sp_technique <- dis_spp %>%
-#   dplyr::count(sample_technique, name = "spp")
-# 
-# technique_out <- dplyr::left_join(r_technique, stud_technique, by = "sample_technique") %>%
-#   dplyr::left_join(ts_technique, by = "sample_technique") %>%
-#   dplyr::left_join(spr_technique, by = "sample_technique") %>%
-#   dplyr::left_join(ord_technique, by = "sample_technique") %>%
-#   dplyr::left_join(fam_technique, by = "sample_technique") %>%
-#   dplyr::left_join(sp_technique, by = "sample_technique")
-# 
-# write.csv(technique_out, "outputs/technique_out.csv", row.names = FALSE)
+# number of records per technique
+r_technique <- dat_n %>%
+  dplyr::count(sample_technique, name = "records")
+
+# number of studies per technique
+stud_technique <- dat_n %>%
+  dplyr::group_by(sample_technique) %>%
+  dplyr::summarise(sources = dplyr::n_distinct(source_title))
+
+# number of time series per technique
+ts_technique <- ts %>%
+  dplyr::group_by(sample_technique) %>%
+  dplyr::summarise(ts = dplyr::n_distinct(ts_id))
+
+# number of species-level records per technique
+spr_technique <- dis_spp_r %>%
+  dplyr::count(sample_technique, name = "spp_n")
+
+# orders, families, species
+ord_technique <- dat_n %>%
+  dplyr::group_by(sample_technique) %>%
+  dplyr::summarise(orders = dplyr::n_distinct(taxon_order))
+
+fam_technique <- dat_n %>%
+  dplyr::group_by(sample_technique) %>%
+  dplyr::summarise(families = dplyr::n_distinct(taxon_family))
+
+sp_technique <- dis_spp %>%
+  dplyr::count(sample_technique, name = "spp")
+
+technique_out <- dplyr::left_join(r_technique, stud_technique, by = "sample_technique") %>%
+  dplyr::left_join(ts_technique, by = "sample_technique") %>%
+  dplyr::left_join(spr_technique, by = "sample_technique") %>%
+  dplyr::left_join(ord_technique, by = "sample_technique") %>%
+  dplyr::left_join(fam_technique, by = "sample_technique") %>%
+  dplyr::left_join(sp_technique, by = "sample_technique")
+
+write.csv(technique_out, "outputs/technique_out.csv", row.names = FALSE)
 
 ##### Biogeographic realms #####
 
-# # convert records to points
-# points <- sf::st_as_sf(dat_n, coords = c("location_longitude", "location_latitude"), crs = 4326)
-# 
-# # simplify geometries
-# realms_simplified <- sf::st_simplify(realms, dTolerance = 0.01)
-# 
-# # join points to realms
-# points_realms <- sf::st_join(points, realms_simplified, left = TRUE)
-# 
-# df_points_realms <- as.data.frame(points_realms)
-# 
-# saveRDS(df_points_realms, "data/df_points_realms.rds")
+# convert records to points
+points <- sf::st_as_sf(dat_n, coords = c("location_longitude", "location_latitude"), crs = 4326)
 
-dat_bio <- readRDS("data/df_points_realms.rds") %>%
+# simplify geometries
+realms_simplified <- sf::st_simplify(realms, dTolerance = 0.01)
+
+# join points to realms
+points_realms <- sf::st_join(points, realms_simplified, left = TRUE)
+
+df_points_realms <- as.data.frame(points_realms)
+
+dat_bio <- df_points_realms %>%
   dplyr::mutate(REALM = dplyr::case_match(REALM,
                                           "NA" ~ "Nearctic",
                                           "PA" ~ "Palearctic",
@@ -556,14 +467,7 @@ ms_pal <- dplyr::filter(dat_bio, ts_id %in% c(878, 861, 5218, 10731, 10668, 1068
                                               , 33, 1062, 5001, 8846))
 ms_nea <- dplyr::filter(dat_bio, ts_id %in% c(12051, 12063, 12052, 10186, 9723, 9712, 10175, 10173, 10170, 10167, 10165))
 
-# save in case ts_id change
-saveRDS(ms_pal, "data/ms_pal.rds")
-saveRDS(ms_nea, "data/ms_nea.rds")
-
-ms_pal <- readRDS("data/ms_pal.rds")
-ms_nea <- readRDS("data/ms_nea.rds")
-
-# Fix missing realms
+# fix missing realms
 dat_bio <- dat_bio %>%
   dplyr::mutate(REALM = dplyr::case_when(occurrence_id %in% ms_pal$occurrence_id ~ "Palearctic",
                                          occurrence_id %in% ms_nea$occurrence_id ~ "Nearctic",
@@ -626,8 +530,6 @@ world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 
 # records spatial
 r_sf_realm <- dat_n %>%
-  # # drop records without lat long
-  # tidyr::drop_na(location_longitude, location_latitude, sample_realm) %>%
   dplyr::count(source_title, location_latitude, location_longitude, sample_technique, sample_realm) %>% 
   sf::st_as_sf(coords = c("location_longitude", "location_latitude"), crs = 4326) %>% 
   # neaten names
@@ -715,7 +617,7 @@ p_comb_spatial <- cowplot::plot_grid(
                      p_ts_realm, nrow = 2, labels = c("b", "c")), ncol = 2, rel_widths = c(1, 0.3), labels = c("a", "")) +
   theme(plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
 
-# cowplot::save_plot("outputs/spatial_comb.png", p_comb_spatial, base_width = 9, base_height = 4)
+cowplot::save_plot("outputs/spatial_comb.png", p_comb_spatial, base_width = 9, base_height = 4)
 
 #### Fig 2 - cumulative records, time series span and freq, techniques ####
 
@@ -844,8 +746,6 @@ tree_fam_func <- function(dat, col_pal, level) {
     treemapify::geom_treemap(colour = "grey40") +
     # order
     treemapify::geom_treemap_subgroup_border(colour = "grey70") +
-    # order text
-    #treemapify::geom_treemap_subgroup_text(place = "centre", grow = TRUE, alpha = 0.5, colour = "grey50", fontface = "italic", min.size = 0) +
     # family text
     treemapify::geom_treemap_text(aes(label = taxon_family), colour = "black", place = "centre", min.size = 10) +
     ggplot2::scale_fill_manual(values = col_pal) +
@@ -940,7 +840,7 @@ p_tree_comb <- cowplot::plot_grid(
   nrow = 2, rel_heights = c(1, 0.6), labels = c("", "b")) +
   theme(plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
 
-# cowplot::save_plot("outputs/tree_comb.png", p_tree_comb, base_width = 10, base_height = 10)
+cowplot::save_plot("outputs/tree_comb.png", p_tree_comb, base_width = 10, base_height = 10)
 
 #### Fig 4 - taxonomic coverage PREDICTS style ####
 
@@ -998,7 +898,7 @@ p_tax_cov <- ggplot(data = tax_cov, aes(x = log10(n_spp), y = log10(n))) +
   scale_x_continuous(name = "Estimated described species", breaks = log10(c(1, 10, 100, 1000, 10000, 100000)), labels = c("1", "10", "100", "1,000", "10,000", "100,000")) +
   scale_y_continuous(name = "Species represented in database", breaks = log10(c(1, 10, 100, 1000, 10000, 100000)), labels = c("1", "10", "100", "1,000", "10,000", "100,000"))
 
-# cowplot::save_plot("outputs/tax_cov.png", p_tax_cov, base_width = 6, base_height = 7)
+cowplot::save_plot("outputs/tax_cov.png", p_tax_cov, base_width = 6, base_height = 7)
 
 ## family level
 
@@ -1063,122 +963,9 @@ p_tax_cov_fam_fc <- ggplot(data = tax_cov_fam_sub, aes(x = log10(n_spp), y = log
 tax_cov_comb <- cowplot::plot_grid(p_tax_cov, p_tax_cov_fam_fc, ncol = 2, labels = "auto") +
   ggplot2::theme(plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
 
-# cowplot::save_plot("outputs/tax_cov_comb.png", tax_cov_comb, base_width = 9, base_height = 6)
+cowplot::save_plot("outputs/tax_cov_comb.png", tax_cov_comb, base_width = 9, base_height = 6)
 
 #### Supplementary ####
-
-# hex
-
-world_moll <- sf::st_transform(world, crs = "+proj=moll")
-
-r_sf_moll <- dat_n %>%
-  # drop records without lat long
-  tidyr::drop_na(location_longitude, location_latitude) %>%
-  dplyr::count(location_longitude, location_latitude) %>% 
-  sf::st_as_sf(coords = c("location_longitude", "location_latitude"), crs = 4326) %>% 
-  sf::st_transform(crs = "+proj=moll") %>% 
-  # add geometry as explicit column
-  dplyr::mutate(X = sf::st_coordinates(.)[,1],
-                Y = sf::st_coordinates(.)[,2])
-
-p_sf_hex <- ggplot(world_moll) +
-  # colour = NA removes country borders
-  geom_sf(fill = "grey80", colour = NA) +
-  geom_hex(data = r_sf_moll, aes(x = X, y = Y), bins = 50) +
-  scale_fill_viridis_c(name = "Number of sites", option = "B", trans = "log10")  +
-  coord_sf(xlim = c(-18040090, 18040090)) +
-  theme_void() +
-  theme(plot.margin = margin(-10, -10, -10, -10, "pt"))
-
-
-
-## sites
-
-# unique sites per year
-s_year <- dat_n %>%
-  dplyr::mutate(date_start_year = as.numeric(format(date_start, "%Y"))) %>% 
-  dplyr::arrange(date_start_year) %>% 
-  dplyr::distinct(new_latitude, new_longitude, .keep_all = TRUE) %>% 
-  # number of unique sites per year
-  dplyr::count(date_start_year)
-
-# cumulative unique sites
-s_year$cumsum <- cumsum(s_year$n)
-
-# plot cumulative unique sites
-p_s_cumsum <- ggplot2::ggplot(s_year, ggplot2::aes(x = date_start_year, y = cumsum)) +
-  ggplot2::geom_line() +
-  geom_point(aes(size = n), colour = "grey", alpha = 0.5) +
-  scale_x_continuous(name = "Year") +
-  scale_y_continuous(name = "Number of unique sites in database", breaks = c(0, 2500, 5000, 7500, 10000), labels = c("0", "2,500", "5,000", "7,500", "10,000")) +
-  theme(legend.position = "none")
-
-## species
-
-# unique species per year
-sp_year <- dat_n %>%
-  dplyr::mutate(date_start_year = as.numeric(format(date_start, "%Y"))) %>% 
-  # remove subspecies text in names
-  dplyr::mutate(taxon_name_preferred = stringr::str_replace(taxon_name_preferred, " subsp. \\w+", "")) %>% 
-  # is the record resolved to species level (i.e., two words)?
-  dplyr::mutate(word_count = stringr::str_count(taxon_name_preferred, "\\S+")) %>% 
-  # only records resolved to species level
-  dplyr::filter(word_count == 2) %>%
-  dplyr::arrange(date_start_year) %>% 
-  dplyr::distinct(taxon_name_preferred, .keep_all = TRUE) %>% 
-  # number of unique species per year
-  dplyr::count(date_start_year)
-
-# cumulative unique species
-sp_year$cumsum <- cumsum(sp_year$n)
-
-# plot cumulative unique species
-p_sp_cumsum <- ggplot2::ggplot(sp_year, ggplot2::aes(x = date_start_year, y = cumsum)) +
-  ggplot2::geom_line() +
-  geom_point(aes(size = n), colour = "grey", alpha = 0.5) +
-  scale_x_continuous(name = "Year") +
-  scale_y_continuous(name = "Number of unique species in database", breaks = c(0, 3000, 6000, 9000), labels = c("0", "3,000", "6,000", "9,000")) +
-  theme(legend.position = "none")
-
-
-
-# sample technique
-r_samp_tech <- dat_n %>% 
-  dplyr::count(sample_technique, sample_realm) %>% 
-  dplyr::filter(sample_technique != "UNKNOWN") %>% 
-  tidyr::complete(sample_technique, sample_realm, fill = list(n = NA)) %>%
-  dplyr::mutate(sample_technique = stringr::str_to_sentence(stringr::str_replace_all(sample_technique, "_", " "))) %>% # neaten names
-  dplyr::mutate(sample_realm = dplyr::case_match(sample_realm,
-                                                 "TERRESTRIAL" ~ "Terrestrial",
-                                                 "FRESHWATER" ~ "Freshwater", 
-                                                 "TERR_FRESH" ~ "Terrestrial/freshwater")) %>% 
-  # as factor
-  dplyr::mutate(sample_realm = factor(sample_realm, levels = c("Terrestrial", "Freshwater", "Terrestrial/freshwater")))
-
-r_samp_tech_sum <- r_samp_tech %>% 
-  dplyr::group_by(sample_technique) %>% 
-  dplyr::summarise(sum_n = sum(n, na.rm = TRUE)) %>% 
-  dplyr::arrange(sum_n)
-
-r_samp_tech <- r_samp_tech %>% 
-  dplyr::mutate(sample_technique = factor(sample_technique, levels = r_samp_tech_sum$sample_technique))
-
-# lollipop plot
-p_loll_samp_tech_r <- ggplot(r_samp_tech) +
-  geom_linerange(aes(x = sample_technique, ymin = 0, ymax = n, colour = sample_realm), position = position_dodge(width = 0.5)) +
-  geom_point(aes(x = sample_technique, y = n, colour = sample_realm),
-             position = position_dodge(width = 0.5)) +
-  scale_colour_manual(values = c("#66c2a5", "#8da0cb", "#fc8d62")) +
-  scale_y_continuous(breaks = c(0, 250000, 500000, 750000, 1000000), labels = c("0", "250,000", "500,000", "750,000", "1,000,000")) +
-  coord_flip() +
-  theme_bw() +
-  labs(y = "Records") +
-  theme(legend.position = "none",
-        panel.border = element_blank(), 
-        axis.title.y = element_blank(),
-        axis.line.x = element_line(linewidth = 0.5),
-        axis.line.y = element_line(linewidth = 0.5))
-
 
 ##### Fig SX - family taxonomic coverage PREDICTS style #####
 
@@ -1208,120 +995,3 @@ p_tax_cov_fam_fc_supp <- ggplot(data = tax_cov_fam, aes(x = log10(n_spp), y = lo
   ggplot2::theme(plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
 
 cowplot::save_plot("outputs/tax_cov_supp.png", p_tax_cov_fam_fc_supp, base_width = 7.5, base_height = 6)
-
-##### Fig SX - #####
-
-
-# treemap of time series per insect family
-tree_ts_fam <- tree_fam_func(dat = ts, col_pal = col_pal, level = "ts")
-
-tree_ts_fam
-
-
-
-#### Extra ####
-
-# time series
-
-# time series spatial
-r_sf_ts <- ts %>%
-  # drop records without lat long
-  tidyr::drop_na(new_longitude, new_latitude) %>%
-  dplyr::count(ts_id, new_longitude, new_latitude) %>% 
-  sf::st_as_sf(coords = c("new_longitude", "new_latitude"), crs = 4326)
-
-p_sf_ts <- ggplot(world) +
-  # colour = NA removes country borders
-  geom_sf(fill = "grey80", colour = NA) +
-  geom_sf(data = r_sf_ts, aes(size = n), alpha = 0.5) +
-  coord_sf(crs = "+proj=moll") +
-  theme_void() +
-  theme(legend.position = "none",
-        plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
-
-# cowplot::save_plot("outputs/spatial_ts.png", p_sf_ts, base_width = 6.5, base_height = 3.5)
-
-
-## records
-
-# records spatial
-r_sf <- dat_n %>%
-  # drop records without lat long
-  tidyr::drop_na(new_longitude, new_latitude) %>%
-  dplyr::count(new_longitude, new_latitude) %>% 
-  sf::st_as_sf(coords = c("new_longitude", "new_latitude"), crs = 4326)
-
-p_sf <- ggplot(world) +
-  # colour = NA removes country borders
-  geom_sf(fill = "grey80", colour = NA) +
-  geom_sf(data = r_sf, aes(size = n), alpha = 0.5) +
-  coord_sf(crs = "+proj=moll") +
-  theme_void() +
-  theme(legend.position = "none",
-        plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
-
-# cowplot::save_plot("outputs/spatial.png", p_sf, base_width = 6.5, base_height = 3.5)
-
-# # number of time-series per realm
-# ts_realm <- ts %>% 
-#   # unique time-series
-#   dplyr::distinct(ts_id, .keep_all = TRUE) %>% 
-#   tidyr::drop_na(sample_realm) %>% 
-#   dplyr::count(sample_realm) %>% 
-#   # percentages
-#   dplyr::mutate(frac = n / sum(n)) %>% 
-#   dplyr::mutate(ymax = cumsum(frac)) %>% 
-#   dplyr::mutate(ymin = c(0, head(.$ymax, n = -1))) %>% 
-#   # neaten names
-#   dplyr::mutate(sample_realm = dplyr::case_match(sample_realm,
-#                                                  "TERRESTRIAL" ~ "Terrestrial",
-#                                                  "FRESHWATER" ~ "Freshwater", 
-#                                                  "TERR_FRESH" ~ "Terrestrial/freshwater")) %>% 
-#   # as factor
-#   dplyr::mutate(sample_realm = factor(sample_realm, levels = c("Terrestrial", "Freshwater", "Terrestrial/freshwater"))) %>% 
-# dplyr::mutate(label_pos = (ymax + ymin) / 2)
-#   
-# # doughnut 
-# p_ts_realm <- ggplot(ts_realm, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = sample_realm)) +
-#   geom_rect() +
-#   #geom_label(x = 3.5, aes(y = labelPosition, label = sample_realm), size=6) +
-#   scale_fill_manual(values = c("#66c2a5", "#8da0cb", "#fc8d62")) +
-#   coord_polar(theta = "y") +
-#   xlim(c(2, 4)) +
-#   theme_void() +
-#   theme(legend.position = "none")
-
-# maybe add plots similar to predicts with samples along a line below
-# https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.2579
-
-ts_tidy <- ts %>% 
-  dplyr::mutate(date_start_year = as.numeric(format(date_start, "%Y")),
-                date_end_year = as.numeric(format(date_end, "%Y"))) 
-
-span_df <- ts_tidy %>% 
-  dplyr::group_by(ts_name) %>% 
-  dplyr::summarise(min_year = min(date_start_year),
-                   max_year = max(date_end_year)) %>% 
-  dplyr::mutate(span = (max_year - min_year) + 1)
-
-freq_df <- ts_tidy %>% 
-  dplyr::group_by(ts_name) %>% 
-  dplyr::distinct(date_start_year) %>% 
-  dplyr::count(ts_name)
-
-span_freq <- dplyr::left_join(span_df, freq_df, by = "ts_name")
-
-colrs <- colorRampPalette(c("white", "yellow", "red"))(50)
-
-p_surf <- ggplot(data = dplyr::filter(span_freq, span >= 10), aes(x = n, y = span) ) +
-  stat_density_2d(geom = "raster", aes(fill = after_stat(density)), contour = FALSE) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 100)) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 100)) +
-  coord_equal() +
-  scale_fill_gradientn(colours = colrs) +
-  labs(x = "Frequency (number of years sampled)", y = "Span (years)") +
-  theme(legend.position = "none")
-
-# cowplot::save_plot("outputs/vk_surf2.png", p_surf2, base_width = 5, base_height = 5)
