@@ -8,4 +8,4 @@ This repository contains the R code and additional files underpinning: 'IN-TIME:
 
 `IN-TIME_summary.R` contains all code to reproduce the summary statistics and figures for the manuscript.
 
-These scripts have been run using R version 4.4.0 - Copyright (C) 2024 The R Foundation for Statistical Computing.
+This code has been run using R version 4.4.0 - Copyright (C) 2024 The R Foundation for Statistical Computing.
