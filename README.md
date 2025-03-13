@@ -1,5 +1,6 @@
 <!-- badges: start -->
 [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/03rcooke/IN-TIME_summary/blob/main/LICENSE)
+[![DOI](https://zenodo.org/badge/947877620.svg)](https://doi.org/10.5281/zenodo.15019126)
 <!-- badges: end -->
 
 # IN-TIME_summary
