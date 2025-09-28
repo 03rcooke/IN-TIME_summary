@@ -453,7 +453,7 @@ points_realms <- sf::st_join(points, realms_simplified, left = TRUE)
 
 df_points_realms <- as.data.frame(points_realms)
 
-dat_bio <- df_points_realms %>%
+dat_bio <- readRDS("data/df_points_realms.rds") %>%
   dplyr::mutate(REALM = dplyr::case_match(REALM,
                                           "NA" ~ "Nearctic",
                                           "PA" ~ "Palearctic",
@@ -471,17 +471,10 @@ ms <- dplyr::distinct(dat_bio, ts_id, .keep_all = TRUE) %>%
   dplyr::filter(is.na(REALM)) %>%
   dplyr::select(sample_id, occurrence_id, ts_id, source_title, country, sample_location_name, sample_latitude, sample_longitude, sample_grid_ref, REALM, geometry)
 
-# ms_ms <- dplyr::filter(ms, !ts_id %in% c(5, 169, 210, 275, 2159, 3205, 4266, 4271, 4273, 4331, 4374, 4375, 4381, 4388, 4437, 4440, 4444, 4445, 4446, 4520, 4521, 4535, 2220, 2222, 2225, 2228, 2230, 3357, 3368, 3903, 4806, 4807, 4818))
-
-# sample_ids for ts_ids
-ms_pal <- dplyr::filter(dat_bio, ts_id %in% c(878, 861, 5218, 10731, 10668, 10682, 10734, 10565, 10675, 10669, 10815, 10560, 10625, 10739, 10567, 10738, 11898, 10981, 11328, 11324, 11868, 11411, 10740, 5537, 7421, 7992, 7983, 8016, 96, 8409, 7984, 7994, 7982, 11728, 11861, 11897, 11848, 8586, 10983, 22, 11030, 11890, 11845, 9578, 10814, 10829, 11863, 11862, 11829, 10982, 11334, 11844, 11852, 11833, 5252, 259, 7981, 8385, 8336, 5270, 4674, 11894, 8828
-                                              , 33, 1062, 5001, 8846))
-ms_nea <- dplyr::filter(dat_bio, ts_id %in% c(12051, 12063, 12052, 10186, 9723, 9712, 10175, 10173, 10170, 10167, 10165))
-
 # fix missing realms
 dat_bio <- dat_bio %>%
-  dplyr::mutate(REALM = dplyr::case_when(occurrence_id %in% ms_pal$occurrence_id ~ "Palearctic",
-                                         occurrence_id %in% ms_nea$occurrence_id ~ "Nearctic",
+  dplyr::mutate(REALM = dplyr::case_when(country %in% c("United Kingdom", "Isle of Man", "South Korea", "Jersey", "Finland", "Guernsey") ~ "Palearctic",
+                                         country %in% c("United States") ~ "Nearctic",
                                          TRUE ~ REALM))
 
 # number of records per biogeographic realm
@@ -522,15 +515,6 @@ bio_out <- dplyr::left_join(r_bio, stud_bio, by = "REALM") %>%
   dplyr::left_join(sp_bio, by = "REALM")
 
 write.csv(bio_out, "outputs/bio_out.csv", row.names = FALSE)
-
-# percentages
-perc_bio_out <- dplyr::mutate(bio_out, records = (records / dplyr::filter(sum_stats, name == "records")$value[1]) * 100) %>%
-  dplyr::mutate(sources = (sources / dplyr::filter(sum_stats, name == "sources")$value[1]) * 100) %>%
-  dplyr::mutate(ts = (ts / dplyr::filter(sum_stats, name == "time series")$value[1]) * 100) %>%
-  dplyr::mutate(spp_n = (spp_n / dplyr::filter(sum_stats, name == "species-level records")$value[1]) * 100) %>%
-  dplyr::mutate(orders = (orders / dplyr::filter(sum_stats, name == "orders")$value[1]) * 100) %>%
-  dplyr::mutate(families = (families / dplyr::filter(sum_stats, name == "families")$value[1]) * 100) %>%
-  dplyr::mutate(spp = (spp / dplyr::filter(sum_stats, name == "unique species")$value[1]) * 100)
 
 #### Fig 1 - spatial plot ####
 
