@@ -1,23 +1,25 @@
-name,value,notes
-records,4988155,"unique occurrence_id; after excluding duplicates, bad plot ids, and records with zeros [I also removed a record that had an abundance of -2]"
-samples,3352715,unique sample_id
-sources,149,unique source_id
-time series,12133,"group by attributes that should be the same within a time series; allowed to change between samples include sample_id, dates, occurrence_id, and sampling effort"
-time series x date combinations,348670,
-orders,24,
-families,566,
-species-level records,2762355,
-unique species,10979,
-min year,1750,
-max year,2023,
-minimum number of sites per study,1,
-maximum number of sites per study,5338,
-minimum number of time series per study,1,
-maximum number of time series per study,5338,
-median span of time series,20,
-minimum span of time series,1,
-maximum span of time series,268,
-number of experimental treatment time series,166,
-proportion of experimental treatment time series,1.368169455,
-number of post-event time series,51,
-proportion of post-event time series,0.420341218,
+"name","value","notes"
+"records",4970982,"unique occurrence_id; after excluding duplicates, bad plot ids, and records with zeros [I also removed a record that had an abundance of -2]"
+"samples",3336021,"unique sample_id"
+"sources",146,"unique source_id"
+"sites",11940,"unique lat long"
+"time series",12129,"group by attributes that should be the same within a time series; allowed to change between samples include sample_id, dates, occurrence_id, and sampling effort"
+"time series x date combinations",348388,""
+"orders",24,""
+"families",565,""
+"species-level records",2762064,""
+"unique species",10975,""
+"countries",40,"lots of territories rather than official countries, isle of man, puerto rico, greenland, palestine, hong kong; 47775 NAs [sum(is.na(dat_n$country))]"
+"min year",1750,""
+"max year",2023,""
+"minimum number of sites per study",1,""
+"maximum number of sites per study",5338,""
+"minimum number of time series per study",1,""
+"maximum number of time series per study",5338,""
+"median span of time series",20,""
+"minimum span of time series",1,""
+"maximum span of time series",268,""
+"number of experimental treatment time series",166,""
+"proportion of experimental treatment time series",1.36862066122516,""
+"number of post-event time series",51,""
+"proportion of post-event time series",0.420479841701707,""

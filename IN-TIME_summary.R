@@ -21,15 +21,26 @@ realms <- sf::read_sf("data/realms.shp")
 
 # number of records
 length(unique(dat_n$occurrence_id))
-# 4988155
+# 4970982
 
 # number of samples
 length(unique(dat_n$sample_id))
-# 3352715
+# 3336021
 
 # number of sources
 length(unique(dat_n$source_title))
-# 149
+# 146
+
+# number of records per source
+r_source <- dat_n %>%
+  dplyr::count(source_title, name = "records") %>% 
+  dplyr::arrange(-records)
+
+# top 5
+sum(r_source$records[1:5])
+
+# all others
+sum(r_source$records[6:nrow(r_source)])
 
 # assemblage time series (unique combinations of source_title, location_latitude, location_longitude, and sample_technique)
 ts <- dat_n %>% 
@@ -46,12 +57,12 @@ ts <- dat_n %>%
 
 # number of assemblage time series
 length(unique(ts$ts_id))
-# 12133
+# 12129
 
 # number of time series x date combinations
 dplyr::distinct(ts, ts_id, date_start) %>% 
   nrow(.)
-# 348670
+# 348388
 
 # number of time series per study
 ts_source <- ts %>% 
@@ -116,7 +127,7 @@ ts_pop <- dat_n %>%
 
 # number of population time series
 length(unique(ts_pop$ts_pop_id))
-# 621739
+# 621518
 
 ts_pop_spp <- ts_pop %>% 
   # remove subspecies text in names
@@ -128,7 +139,7 @@ ts_pop_spp <- ts_pop %>%
 
 # number of population time series resolved to species level
 length(unique(ts_pop_spp$ts_pop_id))
-# 305554
+# 305547
 
 # number of orders
 length(unique(dat_n$taxon_order))
@@ -136,7 +147,7 @@ length(unique(dat_n$taxon_order))
 
 # number of families
 length(unique(dat_n$taxon_family))
-# 566
+# 565
 
 # years
 d_year <- dat_n %>% 
@@ -188,7 +199,7 @@ dis_spp_r <- ts %>%
 
 # number of species-level records
 nrow(dis_spp_r)
-# 2762355
+# 2762064
 
 # unique species
 dis_spp <- dis_spp_r %>% 
@@ -196,7 +207,7 @@ dis_spp <- dis_spp_r %>%
 
 # number of unique species recorded
 nrow(dis_spp)
-# 10979
+# 10975
 
 ## number of unique taxonomic units per time series
 ut <- ts %>% 
