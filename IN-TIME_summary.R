@@ -525,6 +525,8 @@ world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 
 # records spatial
 r_sf_realm <- dat_n %>%
+  # # drop records without lat long
+  # tidyr::drop_na(location_longitude, location_latitude, sample_realm) %>%
   dplyr::count(source_title, location_latitude, location_longitude, sample_technique, sample_realm) %>% 
   sf::st_as_sf(coords = c("location_longitude", "location_latitude"), crs = 4326) %>% 
   # neaten names
@@ -672,6 +674,8 @@ samp_yrs <- ts %>%
   dplyr::group_by(date_start_year) %>% 
   dplyr::summarise(count = dplyr::n_distinct(ts_name))
 
+(sum(dplyr::filter(samp_yrs, date_start_year >= 1990)$count) / sum(samp_yrs$count)) * 100
+
 p_samp_yrs <- ggplot(samp_yrs, aes(x = date_start_year, y = count)) +
   geom_bar(stat = "identity") +
   ggplot2::scale_x_continuous(name = "Year", limits = c(1950, NA), breaks = seq(1950, 2020, by = 5)) +
@@ -741,6 +745,8 @@ tree_fam_func <- function(dat, col_pal, level) {
     treemapify::geom_treemap(colour = "grey40") +
     # order
     treemapify::geom_treemap_subgroup_border(colour = "grey70") +
+    # order text
+    #treemapify::geom_treemap_subgroup_text(place = "centre", grow = TRUE, alpha = 0.5, colour = "grey50", fontface = "italic", min.size = 0) +
     # family text
     treemapify::geom_treemap_text(aes(label = taxon_family), colour = "black", place = "centre", min.size = 10) +
     ggplot2::scale_fill_manual(values = col_pal) +
@@ -901,7 +907,7 @@ cowplot::save_plot("outputs/tax_cov.png", p_tax_cov, base_width = 6, base_height
 tax_ap <- read.csv("data/Arthropod families in PREDICTS with global S share.csv")
 
 nrow(dplyr::filter(dat_n, is.na(taxon_family)))
-# 24604 NAs
+# 24130 NAs
 
 sp_fam <- dis_spp %>% 
   dplyr::group_by(taxon_order) %>% 
@@ -959,34 +965,3 @@ tax_cov_comb <- cowplot::plot_grid(p_tax_cov, p_tax_cov_fam_fc, ncol = 2, labels
   ggplot2::theme(plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
 
 cowplot::save_plot("outputs/tax_cov_comb.png", tax_cov_comb, base_width = 9, base_height = 6)
-
-#### Supplementary ####
-
-##### Fig SX - family taxonomic coverage PREDICTS style #####
-
-tax_cov_fam <- dplyr::left_join(sp_fam, tax_ap, by = c("taxon_family" = "Family")) %>%
-  dplyr::rename(n_spp = Global_S_described) %>% 
-  dplyr::mutate(perc = (n / n_spp) * 100)
-
-r_ord_sort <- dplyr::arrange(r_ord, -n) %>% 
-  dplyr::filter(taxon_order %in% tax_cov_fam$taxon_order)
-
-tax_cov_fam <- tax_cov_fam %>% 
-  dplyr::mutate(taxon_order_fact = factor(taxon_order, levels = r_ord_sort$taxon_order))
-
-# facetted plot
-p_tax_cov_fam_fc_supp <- ggplot(data = tax_cov_fam, aes(x = log10(n_spp), y = log10(n))) +
-  facet_wrap(~taxon_order_fact, ncol = 4) +
-  # 10% line
-  geom_abline(slope = 1, intercept = log10(0.1), lty = 2, colour = "#238b45") +
-  # 1% line
-  geom_abline(slope = 1, intercept = log10(0.01), lty = 2, colour = "#74c476") +
-  # 0.1% line
-  geom_abline(slope = 1, intercept = log10(0.001), lty = 2, colour = "#bae4b3") +
-  geom_point() + 
-  coord_equal() +
-  scale_x_continuous(name = "Estimated described species", breaks = log10(c(1, 100, 10000, 100000)), labels = c("1", "100", "10,000", "100,000")) +
-  scale_y_continuous(name = "Species represented in database", breaks = log10(c(1, 10, 100, 1000, 10000, 100000)), labels = c("1", "10", "100", "1,000", "10,000", "100,000")) +
-  ggplot2::theme(plot.background = ggplot2::element_rect(fill = "white", colour = "white"))
-
-cowplot::save_plot("outputs/tax_cov_supp.png", p_tax_cov_fam_fc_supp, base_width = 7.5, base_height = 6)
